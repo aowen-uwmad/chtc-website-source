@@ -8,7 +8,7 @@ guide:
     -hpc
 ---
 
-CHTC uses Spack ([https://github.com/spack/spack](https://github.com/spack/spack)) for installing and managing software packages on the HPC cluster for all users to use, via the `module` command. Recently, Spack has developed a feature that allows for users to integrate their local installation of Spack with the system-wide installation. This means that when a user installs software with their local installation of Spack, they can automatically incorporate the system-wide packages to satisfy their software's dependencies (similar to Conda and Miniconda).
+CHTC uses Spack ([spack.io](https://spack.io)) for installing and managing software packages on the HPC cluster for all users to use, via the `module` command. You can integrate your user installation of Spack with the system-wide installation, so that you can automatically incorporate the system-wide packages when installing your software using Spack!
 
 **This guide describes how to set up a local copy of Spack and integrate it with the system installation, either for an individual user or for a group of users.** For instructions on how to install packages with Spack, see our other guide, [Installing Software Using Spack](hpc-spack-install.html).
 
@@ -29,7 +29,7 @@ First, log in to the HPC cluster.
 You can then install Spack following its [documentation](https://spack.readthedocs.io/en/latest/getting_started.html). Download the Spack code from their GitHub repository:
 
 ```
-git clone -c feature.manyFiles=true https://github.com/spack/spack.git
+git clone --depth=2 https://github.com/spack/spack.git
 ```
 {:.term}
 
@@ -40,7 +40,7 @@ and then activate Spack by sourcing the setup script with the `.` command
 ```
 {:.term}
 
-That's it! You can test that Spack has been installed by entering `spack` and you should see the help text print out. But before trying to install packages using your Spack installation, you should configure it to recognize the system installation of Spack.
+You can test that Spack has been installed by entering `spack` and you should see the help text print out. 
 
 > This guide assumes that you ran the `git clone` command in your home directory, i.e. `/home/yourNetID`. If you did not, then run the following command to print the full path to your Spack installation.  
 >
@@ -60,7 +60,7 @@ While Spack has been installed, for each session that you want to use it you wil
 ```
 {:.term}
 
-A more convenient option is simply to update your account to run this command whenever you log in. Add the command to the end of the `.bash_profile` file in your home directory, e.g. `nano ~/.bash_profile`, with the full path to the file.  If you ran the `git clone` command in your home directory, then the line you add should be
+A more convenient option is to update your account to run this command whenever you log in. Add the command to the end of the `.bash_profile` file in your home directory, e.g. `nano ~/.bash_profile`, with the full path to the file.  If you ran the `git clone` command in your home directory, then the line you add should be
 
 ```
 . /home/yourNetID/spack/share/spack/setup-env.sh
@@ -76,14 +76,14 @@ where you need to replace `yourNetID` with your NetID.
 
 ## C. Obtain the Provided Configuration Files (Individual)
 
-To simplify the process of configuring your local installation of Spack, we have provided a folder with the necessary configuration files. All that you need to do is copy it to your home directory using the following command.
+We have provided a folder with the necessary configuration files. Copy this into your home directory using the following command.
 
 ```
 cp -R /software/chtc/el9/spack-user-config ~/.spack
 ```
 {:.term}
 
-Your local Spack installation will automatically find the configuration files and will now recognize the packages that are installed system-wide. You can confirm this with the command
+If done correctly, your Spack installation will automatically find these files. Confirm this with the command
 
 ```
 spack find
@@ -94,13 +94,17 @@ This should show a list of packages, including those you see when you run the `m
 
 You are now ready to use Spack for installing the packages that you need! See the instructions in [Installing Software Using Spack](hpc-spack-install.html).
 
+> If this step does not work, double-check that you copied the files to `~/.spack` and not `~/spack` - the period (`.`) is not a typo.
+>
+> Otherwise, contact a facilitator for assistance.
+
 # 2. Setting Up Spack for Group Use
 
-The following instructions for a group installation of Spack assumes that a shared directory has already been created for your group, and that you have access to this shared folder. We also recommend communicating with your colleagues before proceeding.
+The following instructions for a group installation of Spack assumes that a shared directory has already been created for your group, and that you have access to this shared folder. We also recommend coordinating with your colleagues before proceeding.
 
 ## A. Downloading Spack (Group)
 
-First, log in to the HPC cluster, and navigate to your group's shared directory in `/home` with
+First, log in to the HPC cluster. Then, navigate to your group's shared directory in `/home` with
 
 ```
 cd /home/groups/yourGroupName
@@ -112,7 +116,7 @@ where you should replace `yourGroupName` with your group's name. Note this path 
 You can then install Spack following its [documentation](https://spack.readthedocs.io/en/latest/getting_started.html). Download the Spack code from their GitHub repository:
 
 ```
-git clone -c feature.manyFiles=true https://github.com/spack/spack.git
+git clone --depth=2 https://github.com/spack/spack.git
 ```
 {:.term}
 
@@ -123,7 +127,7 @@ and then activate Spack by sourcing the setup script with the `.` command.
 ```
 {:.term}
 
-That's it! You can test that Spack has been installed by entering `spack` and you should see the help text print out. But before trying to install packages using your Spack installation, you should configure it to recognize the system installation of Spack.
+You can test that Spack has been installed by entering `spack` and you should see the help text print out.
 
 > This guide assumes that you ran the `git clone` command in your group's home directory, i.e. `/home/groups/yourGroupName`. If you did not, then run the following command to obtain the full path to your Spack installation.  We will refer to this path as the `SpackRootPath` and you will need to use this path where noted in the instructions below.
 >
@@ -141,7 +145,7 @@ While Spack has been installed, for each session that you want to use it you wil
 ```
 {:.term}
 
-A more convenient option is simply to update your account to run this command whenever you log in. You and your group members should add the command to the end of the `.bash_profile` file in your respective home directories, e.g. `nano ~/.bash_profile`, with the full path to the file.  For a group installation, the line should look like
+A more convenient option is to update your account to run this command whenever you log in. You and your group members should add the command to the end of the `.bash_profile` file in your respective home directories, e.g. `nano ~/.bash_profile`, with the full path to the file.  For a group installation, the line should look like
 
 ```
 . /home/groups/yourGroupName/spack/share/spack/setup-env.sh
@@ -159,7 +163,7 @@ where you need to replace `yourGroupName` with the name of your group.
 
 ### i. Copy the configuration files
 
-To simplify the process of configuring your local installation of Spack, we have provided a folder with the necessary configuration files. All that you need to do is copy it to your home directory using the following command.
+We have provided a folder with the necessary configuration files. Copy this folder into your home directory using the following command.
 
 ```
 cp -R /software/chtc/el9/spack-user-config/ /home/groups/yourGroupName/.spack
@@ -217,7 +221,7 @@ You are now ready to use Spack for installing the packages that you need! See th
    {:.term}
 
 2. Edit the `.bash_profile` file in your home directory (`/home/yourNetID`).
-   You should be able to simply add the following two lines to the end of the file
+   Add the following two lines to the end of the file,
 
    ```
    . /home/groups/yourGroupName/spack/share/spack/setup-env.sh
@@ -227,12 +231,16 @@ You are now ready to use Spack for installing the packages that you need! See th
    where `yourGroupName` should be replaced with the name of your group. Confirm the exact commands with the user who installed Spack for your group. 
 
    > You should be able to find the requisite paths if necessary. For the first line, the command
+   >
    > ```
    > find /home/groups/yourGroupName -type d -name spack | grep "share/spack"
    > ```
    > {:.term}
    >
-   > should give the path you need; simply add "setup-env.sh" to the end of the path. For the second line, the command 
+   > should give the path you need; add "setup-env.sh" to the end of the path.
+   >
+   > For the second line, the command 
+   >
    > ```
    > find /home/groups/yourGroupName -type d -name .spack | sort -n | head -n 1
    > ```
@@ -241,6 +249,7 @@ You are now ready to use Spack for installing the packages that you need! See th
    > should give the path you need. If it doesn't, try again without `| sort -n | head -n 1` to see the full list of matches, and choose the appropriate one.
 
 3. Source the `.bash_profile` with
+
    ```
    . ~/.bash_profile
    ```
@@ -252,7 +261,7 @@ Once configured, you can follow the instructions in our guide [Installing Softwa
 
 ## A. Switching Between Spack Installations
 
-You can easily switch between different Spack installations by creating scripts containing the commands listed in Step 2. above, and then sourcing the one that you want to use.
+You can switch between different Spack installations by creating scripts containing the commands listed in Step 2. above, and then sourcing the one that you want to use.
 
 For example, let's say you want to use a personal installation of Spack for an independent research project, but want to use a group installation of Spack as part of a collaboration. In that case, you would create two scripts, `load-my-spack.sh` and `load-group-spack.sh`, and save them to some central location like `~/bin`. In each script, you provide the path to the `setup-env.sh` file and the `.spack` configuration directory for the respective Spack installations. The example contents of these scripts are provided below, where you should replace `yourNetID` with your NetID and `yourGroupName` with the group name of your collaboration.
 
@@ -270,7 +279,7 @@ export SPACK_USER_CONFIG_PATH=/home/yourNetID/.spack
 export SPACK_USER_CONFIG_PATH=/home/groups/yourGroupName/.spack
 ```
 
-To activate the your personal Spack installation, simply run
+To activate the your personal Spack installation, run
 
 ```
 . path/to/load-my-spack.sh

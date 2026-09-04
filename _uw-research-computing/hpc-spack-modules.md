@@ -8,8 +8,6 @@ guide:
     -hpc
 ---
 
-CHTC uses Spack ([https://github.com/spack/spack](https://github.com/spack/spack)) for installing and managing software packages on the HPC cluster for all users to use, via the `module` command. Recently, Spack has developed a feature that allows for users to integrate their local installation of Spack with the system-wide installation. This means that when a user installs software with their local installation of Spack, they can automatically incorporate the system-wide packages to satisfy their software's dependencies (similar to Conda and Miniconda). 
-
 **This guide describes how to create and use custom personal and shared modules for software packages installed using Spack.** For instructions on how to install software using Spack for you and/or your research group, see our guide [Installing Software Using Spack](hpc-spack-install.html). 
 
 

@@ -8,8 +8,6 @@ guide:
     -hpc
 ---
 
-CHTC uses Spack ([https://github.com/spack/spack](https://github.com/spack/spack)) for installing and managing software packages on the HPC cluster for all users to use, via the `module` command. Recently, Spack has developed a feature that allows for users to integrate their local installation of Spack with the system-wide installation. This means that when a user installs software with their local installation of Spack, they can automatically incorporate the system-wide packages to satisfy their software's dependencies (similar to Conda and Miniconda). 
-
 **This guide describes how to install and manage software using Spack, including how to install and use a specific compiler.** 
 
 **This guide assumes you or your group has already set up your local installation of Spack.** If you have not installed Spack, follow the instructions in [Setting Up Spack on HPC](hpc-spack-setup.html).
@@ -196,7 +194,7 @@ to install the packages inside of the Spack environment, where the number that c
 
 Depending on the number and complexity of the programs you are installing, and how much can be bootstrapped from the system installation, the installation step can take anywhere from several minutes to several hours. 
 
-> If something goes wrong or your connection is interrupted, the installation process can be resumed at a later time without having to start over from the beginning. Make sure that you are in an interactive Slurm session and that you have activated the Spack environment, then simply rerun the `spack install` command again.
+> If something goes wrong or your connection is interrupted, the installation process can be resumed at a later time without having to start over from the beginning. Make sure that you are in an interactive Slurm session and that you have activated the Spack environment, then rerun the `spack install` command again.
 
 ### iv. Finishing the installation
 
@@ -237,7 +235,7 @@ To use the packages that you installed, follow the instructions in the next sect
 
 ## F. Removing an Environment and Uninstalling Unneeded Packages
 
-You may find it necessary to remove a Spack environment, or packages installed using Spack. To uninstall a package, simply run
+You may find it necessary to remove a Spack environment, or packages installed using Spack. To uninstall a package, run
 
 ```
 spack uninstall yourPackageName
