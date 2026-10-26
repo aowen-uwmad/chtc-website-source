@@ -1,0 +1,130 @@
+---
+title: Checklist for Better Throughput
+description: Whether you're submitting 1 job or 10,000 jobs, this checklist with easy changes can help you get better throughput on the HTC system.
+sidebar:
+  - htc
+category: Submit jobs
+---
+
+Whether you're submitting 1 job or 10,000 jobs, this checklist with easy changes can help you get better throughput on the HTC system.
+
+1. Reduce your resource requests
+2. Remove unnecessary requirements
+3. Scale out to additional capacity
+
+Take a few minutes to check your submit file to see if one these tips could work for you!
+
+## Reduce your resource requests
+
+Are you requesting more resources than your job is actually using?
+Those "wasted" resources are dragging down your throughput!
+
+1. Check your actual usage
+2. Reduce your request
+3. Automatically retry rare overusage
+
+### Check your actual usage
+
+Couple of ways to do this - userlog, condor_history, Kashika's tool.
+
+In our [Practice: Submit HTC Jobs using HTCondor guide](https://chtc.cs.wisc.edu/uw-research-computing/htcondor-job-submission/#test-and-optimize-resources)
+we talk about how the `log` file specified in your submit file contains a report of resources used for a job that completed successfully.
+
+This is a useful section to check when you are running only one or two jobs at a time, but can be difficult to utilize when you're running thousands of jobs. 
+
+If the jobs you are interested in have finished running within the last couple of days or so, then HTCondor should have a record of them in the AP's history.
+
+You can query this information with a command like this:
+
+<Terminal>
+
+```bash
+condor_history CLUSTER_ID -af:hj, CpusUsage RequestCPUs MemoryUsage RequestMemory DiskUsage RequestDisk
+```
+
+</Terminal>
+
+Example:
+
+```
+[aowen4@ap2001 testing]$ condor_history 12367708 -af:hh, CpusUsage RequestCPUs MemoryUsage RequestMemory DiskUsage RequestDisk
+CpusUsage, RequestCPUs, MemoryUsage, RequestMemory, DiskUsage, RequestDisk
+0.0      , 4          , 0          , 16384        , 75       , 31457280
+[aowen4@ap2001 testing]$ condor_history 12367708 -af:hj, CpusUsage RequestCPUs MemoryUsage RequestMemory DiskUsage RequestDisk
+ ID, CpusUsage, RequestCPUs, MemoryUsage, RequestMemory, DiskUsage, RequestDisk
+12367708.0, 0.0      , 4          , 0          , 16384        , 75       , 31457280
+```
+
+
+<Tip header="⚠️ Experimental tool">
+
+The `htcondor cluster summary` and related commands are under active development!
+
+Please let us know if you have any feedback.
+
+</Tip>
+
+### Reduce your request
+
+Change and check.
+
+### Automatically retry rare overusage
+
+Do most of your jobs work just fine, but a couple will run out of resources?
+Most users decide to increase their resource requests to handle these rare cases.
+But with an HTCondor feature you can request the low tier amount and automatically retry jobs that fail with the high tier amount.
+
+<Terminal>
+
+```
+request_memory = 2GB
+retry_request_memory = 10GB
+```
+
+</Terminal>
+
+## Remove unnecessary requirements
+
+1. Testing-based requirements (is build job, avoid CHTC pool for checkpointing)
+2. Hardware-based requirements - do you actually need them?
+
+## Scale out with backfill and the OSPool
+
+Get access to more machines. 
+
+1. Use "is_resumable" backfill to leverage idle CHTC servers
+2. Use "want_campus_pools" to run on idle UW-Madison servers connected to CHTC
+3. Use "want_ospool" to run on idle servers available through the national OSPool system
+
+<Tip header="❔ Shared or backfill">
+
+If you configure your jobs to use the backfill capacity at CHTC, then those jobs will not be able to run on the shared capacity.
+This is an implementation detail that requires strategic changes to the system to correct. 
+
+To utilize both the shared capacity and the backfill capacity, we recommend that you divide your work between the two submission types.
+For example, submit 1,000 jobs that use the shared capacity and a different 1,000 jobs that use the backfill capacity.
+
+Your request for campus pools and OSPool capacity is independent of this choice.
+
+</Tip>
+
+## Looking for more?
+
+Did you pass the checklist and want to improve your throughput even more?
+Well, that's going to take some work.
+If you're up for it, check out our related guide:
+
+<ButtonRow>
+
+<Button href="/uw-research-computing/htc-refactor-throughput">Refactor for Throughput</Button>
+
+</ButtonRow>
+
+The facilitation team is also happy to discuss strategies to help improve the throughput for your specific project.
+
+## Related pages
+
+* [Refactor for Throughput](/uw-research-computing/htc-refactor-throughput)
+* [Submit multiple jobs](/uw-research-computing/multiple-jobs)
+* [Quick reference: HTCondor commands](/uw-research-computing/htcondor-quick-ref)
+* [Request variable memory](/uw-research-computing/variable-memory)
