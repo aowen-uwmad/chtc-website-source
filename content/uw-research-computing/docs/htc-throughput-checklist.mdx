@@ -1,16 +1,22 @@
 ---
 title: Checklist for Better Throughput
-description: Whether you're submitting 1 job or 10,000 jobs, this checklist with easy changes can help you get better throughput on the HTC system.
+description: Whether you're submitting 1 job or 10,000 jobs, this checklist has easy changes that can help you get better throughput on the HTC system.
 sidebar:
   - htc
 category: Submit jobs
 ---
 
-Whether you're submitting 1 job or 10,000 jobs, this checklist with easy changes can help you get better throughput on the HTC system.
+<!--
+This guide is intended to follow the action/application "How-to Guides" square of diataxis.fr
+Technically, it's more of a collection of such guides with the same overall goal.
+-->
 
-1. Reduce your resource requests
-2. Remove unnecessary requirements
-3. Scale out to additional capacity
+Whether you're submitting 1 job or 10,000 jobs,
+this checklist has easy changes that can help you get better throughput on the HTC system.
+
+* Reduce your resource requests
+* Remove unnecessary requirements
+* Scale out to additional capacity
 
 Take a few minutes to check your submit file to see if one these tips could work for you!
 
@@ -23,16 +29,33 @@ Those "wasted" resources are dragging down your throughput!
 2. Reduce your request
 3. Automatically retry rare overusage
 
+<Tip header="Testing is okay">
+
+When you are testing while developing a workflow,
+don't worry about the resource usage.
+
+Once your test job works as intended,
+then start tuning the resource requests.
+
+</Tip>
+
 ### Check your actual usage
 
-Couple of ways to do this - userlog, condor_history, Kashika's tool.
+#### Use the log file
 
+<!-- Needs cleaning up... -->
 In our [Practice: Submit HTC Jobs using HTCondor guide](https://chtc.cs.wisc.edu/uw-research-computing/htcondor-job-submission/#test-and-optimize-resources)
-we talk about how the `log` file specified in your submit file contains a report of resources used for a job that completed successfully.
+we talk about how the `log` file specified in your submit file contains a report of resources used
+for a job that completed successfully.
 
-This is a useful section to check when you are running only one or two jobs at a time, but can be difficult to utilize when you're running thousands of jobs. 
+This is a useful section to check when you are running only one or two jobs at a time,
+but can be difficult to utilize when you're running thousands of jobs. 
 
-If the jobs you are interested in have finished running within the last couple of days or so, then HTCondor should have a record of them in the AP's history.
+#### Use job history
+
+<!-- Needs cleaning up... -->
+If the jobs you are interested in have finished running within the last couple of days or so,
+then HTCondor should have a record of them in the AP's history.
 
 You can query this information with a command like this:
 
@@ -55,10 +78,13 @@ CpusUsage, RequestCPUs, MemoryUsage, RequestMemory, DiskUsage, RequestDisk
 12367708.0, 0.0      , 4          , 0          , 16384        , 75       , 31457280
 ```
 
+#### Use prototype tool
 
-<Tip header="⚠️ Experimental tool">
 
-The `htcondor cluster summary` and related commands are under active development!
+
+<Tip header="Feedback welcome">
+
+These commands are under active development!
 
 Please let us know if you have any feedback.
 
@@ -66,13 +92,24 @@ Please let us know if you have any feedback.
 
 ### Reduce your request
 
-Change and check.
+The goal is to make sure your jobs have *just enough* resources to execute their work.
+ The simplest approach is to take your usage values and round up your request to the nearest whole number.
+
+For example, if your job(s)
+
+* used 1.3 CPUs, then set `request_cpus = 2`.
+* used 3.5 GB RAM, then set `request_memory = 4GB`.
+* used 15.8 GB of disk, then set `request_disk = 16GB`.
+
+In general, we recommend that you request at least 1 CPU, 1GB of memory, and 1GB of disk.
+You can technically go lower in terms of memory and disk, but it may not actually affect the amount that your job receives.
 
 ### Automatically retry rare overusage
 
 Do most of your jobs work just fine, but a couple will run out of resources?
 Most users decide to increase their resource requests to handle these rare cases.
-But with an HTCondor feature you can request the low tier amount and automatically retry jobs that fail with the high tier amount.
+But with an HTCondor feature you can request the low tier amount
+and automatically retry jobs that fail with the high tier amount.
 
 <Terminal>
 
@@ -98,11 +135,14 @@ Get access to more machines.
 
 <Tip header="❔ Shared or backfill">
 
-If you configure your jobs to use the backfill capacity at CHTC, then those jobs will not be able to run on the shared capacity.
+If you configure your jobs to use the backfill capacity at CHTC,
+then those jobs will not be able to run on the shared capacity.
 This is an implementation detail that requires strategic changes to the system to correct. 
 
-To utilize both the shared capacity and the backfill capacity, we recommend that you divide your work between the two submission types.
-For example, submit 1,000 jobs that use the shared capacity and a different 1,000 jobs that use the backfill capacity.
+To utilize both the shared capacity and the backfill capacity,
+we recommend that you divide your work between the two submission types.
+For example, submit 1,000 jobs that use the shared capacity and
+a different 1,000 jobs that use the backfill capacity.
 
 Your request for campus pools and OSPool capacity is independent of this choice.
 
@@ -120,7 +160,8 @@ If you're up for it, check out our related guide:
 
 </ButtonRow>
 
-The facilitation team is also happy to discuss strategies to help improve the throughput for your specific project.
+The facilitation team is also happy to discuss strategies to help improve the throughput
+for your specific project.
 
 ## Related pages
 
