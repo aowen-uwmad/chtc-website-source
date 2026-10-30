@@ -18,8 +18,6 @@ this checklist has easy changes that can help you get better throughput on the H
 * Remove unnecessary requirements
 * Scale out to additional capacity
 
-Take a few minutes to check your submit file to see if one these tips could work for you!
-
 ## Reduce your resource requests
 
 Are you requesting more resources than your job is actually using?
@@ -43,19 +41,48 @@ then start tuning the resource requests.
 
 #### Use the log file
 
-<!-- Needs cleaning up... -->
-In our [Practice: Submit HTC Jobs using HTCondor guide](https://chtc.cs.wisc.edu/uw-research-computing/htcondor-job-submission/#test-and-optimize-resources)
-we talk about how the `log` file specified in your submit file contains a report of resources used
-for a job that completed successfully.
+In the log file of a job that successfully completed,
+look for the table under the "Job terminated" log entry.
+The table should look something like this:
 
-This is a useful section to check when you are running only one or two jobs at a time,
-but can be difficult to utilize when you're running thousands of jobs. 
+```
+        Partitionable Resources :    Usage  Request Allocated
+           Cpus                 :        0        2         2
+           Disk (KB)            :       32  5242880   5242880
+           GPUs                 :                           0
+           IoHeavy              :                           0
+           Memory (MB)          :        1     1024      1024
+           TimeExecute (s)      :       90
+           TimeSlotBusy (s)     :       91
+...
+```
+
+On the left is the label for the resource type and its units.
+On the right is
+
+* `Usage` - how much the job used
+* `Request` - how much you requested in the submit file
+* `Allocated` - how much the system gave you
+
+<Tip header="Missing log file?">
+
+Currently, in order to generate a log file for an HTCondor job,
+make sure to include the `log` line in the submit file.
+
+For example,
+
+<Terminal>
+```
+log = test.log
+```
+</Terminal>
+
+</Tip>
 
 #### Use job history
 
-<!-- Needs cleaning up... -->
-If the jobs you are interested in have finished running within the last couple of days or so,
-then HTCondor should have a record of them in the AP's history.
+If the job has completed "recently",
+HTCondor will have a record of the job in the AP's history.
 
 You can query this information with a command like this:
 
@@ -70,17 +97,22 @@ condor_history CLUSTER_ID -af:hj, CpusUsage RequestCPUs MemoryUsage RequestMemor
 Example:
 
 ```
-[aowen4@ap2001 testing]$ condor_history 12367708 -af:hh, CpusUsage RequestCPUs MemoryUsage RequestMemory DiskUsage RequestDisk
-CpusUsage, RequestCPUs, MemoryUsage, RequestMemory, DiskUsage, RequestDisk
-0.0      , 4          , 0          , 16384        , 75       , 31457280
-[aowen4@ap2001 testing]$ condor_history 12367708 -af:hj, CpusUsage RequestCPUs MemoryUsage RequestMemory DiskUsage RequestDisk
+[bbadger2@ap2001 ~]$ condor_history 12367708.0 -af:hj, CpusUsage RequestCPUs MemoryUsage RequestMemory DiskUsage RequestDisk
  ID, CpusUsage, RequestCPUs, MemoryUsage, RequestMemory, DiskUsage, RequestDisk
-12367708.0, 0.0      , 4          , 0          , 16384        , 75       , 31457280
+12367708.0, 3.6111531, 4          , 1977       , 2048         , 750000   , 5242880
 ```
 
+If you have a lot of jobs, you can create a `.csv` file for further analysis:
+
+<Terminal>
+
+```bash
+condor_history CLUSTER_ID -af:hj, CpusUsage RequestCPUs MemoryUsage RequestMemory DiskUsage RequestDisk > resource_usage.csv
+```
+
+</Terminal>
+
 #### Use prototype tool
-
-
 
 <Tip header="Feedback welcome">
 
@@ -90,10 +122,42 @@ Please let us know if you have any feedback.
 
 </Tip>
 
+As of HTCondor version 26.1, there is a prototype tool to help you
+with collecting and analyzing resource usage.
+
+First run the `summarize` command.
+(This may take up to 5-10 minutes in the prototype.)
+
+<Terminal>
+
+```bash
+htcondor cluster summarize CLUSTER_ID
+```
+
+</Terminal>
+
+The output of this command will give a summary of the jobs that are in the queue and the history,
+including suggestions on how to improve your workflow.
+
+Next, for a more in-depth analysis of the resource usage,
+run the `analyze` command (this will run much faster the second time):
+
+<Terminal>
+
+```bash
+htcondor cluster analytics CLUSTER_ID
+```
+
+</Terminal>
+
+This will report a breakdown of your jobs' resource usage,
+along with recommendations on what to set your resource requests to!
+
 ### Reduce your request
 
 The goal is to make sure your jobs have *just enough* resources to execute their work.
- The simplest approach is to take your usage values and round up your request to the nearest whole number.
+The simplest approach is to take your usage values
+and round up your request to the nearest whole number.
 
 For example, if your job(s)
 
@@ -101,52 +165,205 @@ For example, if your job(s)
 * used 3.5 GB RAM, then set `request_memory = 4GB`.
 * used 15.8 GB of disk, then set `request_disk = 16GB`.
 
+For memory and disk, you can set the requests to fractional values just above your measured usage.
+That assumes, however, that the usage your measured is representative of all of your jobs
+and that there is little fluctuation between jobs.
+A little "wiggle room" in your request helps avoid interruptions
+while still improving your throughput.
+
+In the case of CPUs, you can actually request fewer CPUs than your actual usage,
+with the tradeoff that your job will have a longer runtime.
+It's a good idea to test such a change before deploying it at a large scale.
+
+<Tip header="Minimum requests">
+
 In general, we recommend that you request at least 1 CPU, 1GB of memory, and 1GB of disk.
-You can technically go lower in terms of memory and disk, but it may not actually affect the amount that your job receives.
+You can technically go lower in terms of memory and disk,
+but that requires testing to ensure your job is still functional then.
+
+</Tip>
 
 ### Automatically retry rare overusage
 
-Do most of your jobs work just fine, but a couple will run out of resources?
-Most users decide to increase their resource requests to handle these rare cases.
-But with an HTCondor feature you can request the low tier amount
-and automatically retry jobs that fail with the high tier amount.
+Let's say that almost all of your jobs only need 1 GB of memory,
+but a handful that you can't predict will need 5 GB of memory.
+
+Instead of requesting 5 GB of memory for all of your jobs,
+you can request 1 GB and then have HTCondor retry any jobs that run out of memory with 5 GB.
+
+The following lines in the submit file describe this setup:
 
 <Terminal>
 
 ```
-request_memory = 2GB
-retry_request_memory = 10GB
+request_memory = 1GB
+retry_request_memory = 5GB
 ```
 
 </Terminal>
 
+Most of your jobs will run just fine on their first execution requesting 1 GB.
+For the ones that run out of memory on the first attempt,
+HTCondor will automatically retry them with a request of 5 GB.
+
+For more information,
+see the [Request variable memory](/uw-research-computing/variable-memory) guide.
+
 ## Remove unnecessary requirements
 
-1. Testing-based requirements (is build job, avoid CHTC pool for checkpointing)
-2. Hardware-based requirements - do you actually need them?
+Sometimes, requirements are included in a submit file to restrict the type of machine the job uses.
+If you don't actually need those restrictions, then they are hurting your throughput.
+
+**Remember to test your changes before submitting a large workflow.**
+Maybe you have a good reason for the requirement and just don't know it!
+
+<Tip header="Modifying `requirements`">
+
+The `requirements` expression is first-order logic and can contain multiple statements.
+You probably don't want to remove the entire line, just the specific statement.
+
+</Tip>
+
+### Operating system
+
+If you are using a container, then you don't need to worry about operating system!
+Then you can remove any statements that look like
+
+* `OpSysMajorVer < 8`
+* `OpSysMajorVer >= 8`
+
+and so on.
+
+Even if you aren't using a container,
+you should remove statements that limit your job to using `OpSysMajorVer` of only 7 or 8 -
+very few such machines remain in the pool at this time.
+
+### File transfers
+
+Double-check your list of input and output file transfers in your submit file.
+
+File transfers that use the `pelican://` or `osdf://` prefixes, or no prefix at all,
+do **not** need additional requirements to function.
+In that case, you can remove any statements with
+
+* `HasCHTCStaging == true`
+* `HasCHTCProjects == true`
+
+If you are using the `file://` prefix
+or otherwise accessing the `/staging` or `/project` directories from directly inside of your job,
+such a requirement ensures you can access those directories.
+
+### CPU architecture
+
+Remove statements that target specific CPU chips, such as
+
+* `CpuModel == "AMD EPYC 9454 48-Core Processor"`
+* `CpuModelNumber == 173`
+
+In addition, check if statements regarding microarchitecture or CPU instruction sets,
+such as
+
+* `Microarch == "x86_64-v4"`
+* `has_avx512f == true`
+
+are actually needed.
+
+If the software was compiled for a specific type of CPU,
+then it may require these statements may be required.
+In that case, removing these lines may lead to an `Illegal instruction` error.
+
+### GPU architecture
+
+In our testing, the exact GPU used to run a calculation is not important,
+so long as the GPU is compatible with your software.
+
+First, we strongly recommend that you remove any statements targeting a specific device, e.g.,
+
+* `require_gpus = DeviceName == 'DeviceName = "NVIDIA H200 NVL"'`
+* `GPUs_DeviceName == 'DeviceName = "NVIDIA H200 NVL"'`
+
+unless you are explicitly attempting to benchmark a calculation against that GPU.
+
+Next, check that your GPU requests are not unnecessarily restrictive.
+
+* `gpus_minimum_capability = FOO`
+* `gpus_maximum_capability = BAR`
+* `gpus_minimum_memory = BAZ`
+
+<Tip header="New compability guide">
+
+Check out our new guide: [Find compatible GPUs](/uw-research-computing/gpu-compatibility)
+
+This will help you decide the exact values to request for capability!
+
+</Tip>
+
+### Avoiding bad machines
+
+If you've had jobs repeatedly fail on a bad machine,
+you may have added a requirement for your job to avoid running on that machine.
+
+For example, this statement says to avoid two machines:
+
+```
+requirements = (Machine != "e4023.chtc.wisc.edu") && (Machine != "e4039.chtc.wisc.edu")
+```
+
+This should only be a **temporary** workaround and only after you've notified us!
+Remove such statements unless there is an active issue.
+
+### Miscellaneous
+
+* **Scaling out tests**: in our [Scaling beyond local HTC capacity](/uw-research-computing/checkpointing),
+    guide, there's a section on "Testing jobs outside CHTC" where we have the line
+
+    ```
+    requirements = (Poolname =!= "CHTC")
+    ```
+
+    Unless you really don't want to run on CHTC, remove this line.
+
+* **Build jobs**: For installing software or installling containers.
+    Remove this line for regular jobs.
+
+    ```
+    +IsBuildJob = true
+    ```
+
+* **CHTC software**: for licensed software,
+    per our [Use Licensed Software](/uw-research-computing/licensed-software) guide,
+    only the module-based installation needs
+
+    ```
+    requirements = (HasChtcSoftware == true)
+    ```
+
+    If you are using the **container** version, you can remove this line.
+
 
 ## Scale out with backfill and the OSPool
 
-Get access to more machines. 
+The more machines your jobs can run on, the more throughput you can achieve.
 
-1. Use "is_resumable" backfill to leverage idle CHTC servers
-2. Use "want_campus_pools" to run on idle UW-Madison servers connected to CHTC
-3. Use "want_ospool" to run on idle servers available through the national OSPool system
+1. Use "is_resumable" backfill to leverage idle CHTC servers.
 
-<Tip header="❔ Shared or backfill">
+    If you have shorter jobs, particularly ones that require a GPU,
+    use the `+is_resumable = true` option to run on idle nodes prioritized for other researchers.
+    For more information, see our [Checkpointing guide](/uw-research-computing/checkpointing).
 
-If you configure your jobs to use the backfill capacity at CHTC,
-then those jobs will not be able to run on the shared capacity.
-This is an implementation detail that requires strategic changes to the system to correct. 
+2. Use "want_campus_pools" backfill to run on idle UW-Madison servers connected to CHTC.
 
-To utilize both the shared capacity and the backfill capacity,
-we recommend that you divide your work between the two submission types.
-For example, submit 1,000 jobs that use the shared capacity and
-a different 1,000 jobs that use the backfill capacity.
+    If your jobs are "portable", but you want them to stay on the UW-Madison campus,
+    use the `want_campus_pools = true` option to run on idle servers across the campus.
+    For more information,
+    see our [Scale beyond local HTC capacity](/uw-research-computing/scaling-htc) guide.
 
-Your request for campus pools and OSPool capacity is independent of this choice.
+3. Use "want_ospool" to run on idle servers available through the national OSPool system.
 
-</Tip>
+    If your jobs are "portable" and you're willing to run them anywhere in the US,
+    use the `want_ospool = true` option to send your jobs to the national OSPool system.
+    For more information,
+    see our [Scale beyond local HTC capacity](/uw-research-computing/scaling-htc) guide.
 
 ## Looking for more?
 
